@@ -1,5 +1,18 @@
 const { ApolloServer, gql } = require('apollo-server')
 const { v4: uuid } = require('uuid')
+const mongoose = require('mongoose')
+const Author = require('./models/author')
+const Book = require('./models/book')
+require('dotenv').config()
+
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
+  .then(() => {
+    console.log('connected to MongoDB')
+  })
+  .catch((error) => {
+    console.log('error connecting to Mongo')
+  })
+
 let authors = [
   {
     name: 'Robert Martin',
@@ -93,7 +106,7 @@ const typeDefs = gql`
 
   type Book {
     title: String!
-    author: String!
+    author: Author!
     published: Int!
     id: ID!
     genres: [String!]!
@@ -119,15 +132,12 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    bookCount: () => books.length,
-    authorCount: () => authors.length,
+    bookCount: () => Book.collection.countDocuments(),
+    authorCount: () => Author.collection.countDocuments(),
     allBooks: (root, args) => {
-      let res = books
-      if (args.author) res = res.filter(b => b.author === args.author)
-      if (args.genre) res = res.filter(b => b.genres.includes(args.genre))
-      return res
+      return Book.find({})
     },
-    allAuthors: () => authors
+    allAuthors: () => Author.find({})
   },
 
   Author: {
@@ -135,12 +145,20 @@ const resolvers = {
   },
 
   Mutation: {
-    addBook: (root, args) => {
-      if (!authors.map(a => a.name).includes(args.author)) {
-        authors = authors.concat({name: args.author, id: uuid()})
-      }
-      const newBook = {...args, id: uuid()}
-      books = books.concat(newBook)
+    addBook: async (root, args) => {
+
+      const author = await Author.findOne({ name: args.author })
+
+      if (author) {
+        const newBook = new Book({ ...args, author })
+        await newBook.save()
+        return newBook
+      } 
+      
+      const newAuthor = new Author( {name: args.author} )
+      await newAuthor.save()
+      const newBook = new Book({ ...args, author: newAuthor })
+      await newBook.save()
       return newBook
     },
 
