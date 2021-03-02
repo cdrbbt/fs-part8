@@ -49,6 +49,7 @@ const App = () => {
 
       <RecBooks
         show={page === 'rec'}
+        user={user}
       />
 
       <LoginForm

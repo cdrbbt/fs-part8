@@ -2,10 +2,23 @@ import React, { useEffect, useState } from 'react'
 import { useQuery, useLazyQuery } from '@apollo/client'
 import { ME, BOOKS_OF_GENRE } from '../queries'
 
-const RecBooks = (props) => {
-  const result = useQuery(ME)
+const RecBooks = ({ show, user }) => {
+  //should refetch on login instead
+  const [getMe, result] = useLazyQuery(ME, {fetchPolicy: "network-only"})
   const [getBooks, theBooks] = useLazyQuery(BOOKS_OF_GENRE)
   const [books, setBooks] = useState([])
+
+  useEffect(() => {
+    getMe()
+  },[user])
+
+
+  useEffect(() => {
+    if (result.data && (result.data.me !== null)) {
+      console.log(result.data)
+      getBooks({variables: { genre: result.data.me.favoriteGenre}})
+    }
+  }, [result.data])
 
   useEffect(() => {
     if (theBooks.data){
@@ -13,13 +26,7 @@ const RecBooks = (props) => {
     }
   },[theBooks])
 
-  useEffect(() => {
-    if (result.data) {
-      getBooks({variables: { genre: result.data.me.favoriteGenre}})
-    }
-  }, [result.data])
-
-  if (!props.show || result.loading) {
+  if (!show || result.loading) {
     return null
   }
 
