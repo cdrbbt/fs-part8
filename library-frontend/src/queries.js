@@ -52,3 +52,26 @@ export const LOGIN = gql`
     }
   }
 `
+
+export const ME = gql`
+  query me{
+    me{
+      username
+      favoriteGenre
+    }
+  }
+`
+
+//could modify the fetch books instead to take arguments
+export const BOOKS_OF_GENRE = gql`
+  query booksGenre($genre: String!){
+    allBooks(genre: $genre){
+      title
+      author{
+        name
+      }
+      published
+      genres
+    }
+  }
+`
