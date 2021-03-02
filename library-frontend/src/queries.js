@@ -63,8 +63,9 @@ export const ME = gql`
 `
 
 //could modify the fetch books instead to take arguments
+//that would have been better
 export const BOOKS_OF_GENRE = gql`
-  query booksGenre($genre: String!){
+  query booksGenre($genre: String){
     allBooks(genre: $genre){
       title
       author{

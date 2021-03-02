@@ -1,26 +1,35 @@
-import React, { useState } from 'react'
-import { useQuery } from '@apollo/client'
-import { ALL_BOOKS } from '../queries'
+import React, { useEffect, useState } from 'react'
+import { useLazyQuery, useQuery } from '@apollo/client'
+import { ALL_BOOKS, BOOKS_OF_GENRE } from '../queries'
 
 const Books = (props) => {
-  const result = useQuery(ALL_BOOKS)
+  const allBooks = useQuery(ALL_BOOKS)
   const [filter, setFilter] = useState(null)
+  const [books, setBooks] = useState([])
+  const [fetchGenre, filteredResult] = useLazyQuery(BOOKS_OF_GENRE, {fetchPolicy: "network-only"})
+  
+  useEffect(() => {
+    fetchGenre({ 
+      variables: { genre: filter },
+    })
+  }, [filter])
 
-  if (!props.show || result.loading) {
+  useEffect(() => {
+    if (filteredResult.data) setBooks(filteredResult.data.allBooks)
+  }, [filteredResult])
+
+  if (!props.show || allBooks.loading) {
     return null
   }
 
-  const books = result.data.allBooks
+  const fullBooks = allBooks.data.allBooks
 
+  //ideally the backend would be able to provide a list, this would avoid the awkward fetch all query
   let genres = []
 
-  books.map(b => b.genres).flat().forEach(g => {
+  fullBooks.map(b => b.genres).flat().forEach(g => {
     if (!genres.includes(g)) genres.push(g)
   });
-
-  const bookFilter = (book) => {
-    return filter ? book.genres.includes(filter) : true
-  }
 
   const filterSelect = genres
   .map(g => <button key={g} onClick={() => setFilter(g)}>{g}</button>)
@@ -41,7 +50,7 @@ const Books = (props) => {
               published
             </th>
           </tr>
-          {books.filter(bookFilter).map(a =>
+          {books.map(a =>
             <tr key={a.title}>
               <td>{a.title}</td>
               <td>{a.author.name}</td>
