@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useLazyQuery, useQuery } from '@apollo/client'
-import { ALL_BOOKS, BOOKS_OF_GENRE } from '../queries'
+import { useLazyQuery, useQuery, useSubscription } from '@apollo/client'
+import { ALL_BOOKS, BOOKS_OF_GENRE, BOOK_ADDED } from '../queries'
 
 const Books = (props) => {
   const allBooks = useQuery(ALL_BOOKS)
@@ -8,6 +8,12 @@ const Books = (props) => {
   const [books, setBooks] = useState([])
   const [fetchGenre, filteredResult] = useLazyQuery(BOOKS_OF_GENRE, {fetchPolicy: "network-only"})
   
+  useSubscription(BOOK_ADDED, {
+    onSubscriptionData: ({ subscriptionData }) => {
+      window.alert(`new book ${subscriptionData.data.bookAdded.title}`)
+    }
+  })
+
   useEffect(() => {
     fetchGenre({ 
       variables: { genre: filter },
