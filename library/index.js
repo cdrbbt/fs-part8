@@ -176,7 +176,7 @@ const resolvers = {
   },
 
   Author: {
-    bookCount: (root) => Book.find({ author: root._id}).countDocuments()
+    bookCount: (root) => root.books.length
   },
 
   Book: {
@@ -223,6 +223,8 @@ const resolvers = {
         const newBook = new Book({ ...args, author })
         try{
           await newBook.save()
+          author.books = author.books.concat(newBook)
+          await author.save()
           pubsub.publish('BOOK_ADDED', { bookAdded: newBook })
           return newBook
         } catch (error) {
@@ -234,8 +236,9 @@ const resolvers = {
       
       try{
         const newAuthor = new Author( {name: args.author} )
-        await newAuthor.save()
         const newBook = new Book({ ...args, author: newAuthor })
+        newAuthor.books = [newBook]
+        await newAuthor.save()
         await newBook.save()
         pubsub.publish('BOOK_ADDED', { bookAdded: newBook })
         return newBook
